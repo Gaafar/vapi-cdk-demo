@@ -6,13 +6,19 @@ export class VAPIStack extends cdk.Stack {
   constructor(app: cdk.App, id: string) {
     super(app, id);
 
+    // create a REST API gateway to invoke lambda functions from http requests
+    const api = new awsApigateway.RestApi(this, 'VAPIGateway', {});
+    addCorsOptions(api.root);
+
+    // common options for all lambda functions
     const defaultLambdaProps = {
+      // the whole directory will be deployed for all lambdas, but the handler will be different
       code: new awsLambda.AssetCode('lambda'),
       runtime: awsLambda.Runtime.NodeJS810,
       timeout: 60,
     };
 
-    const api = new awsApigateway.RestApi(this, 'VAPIGateway', {});
+    // create 3 lambdas and bind them to REST API resources & methods
 
     // tslint:disable-next-line:no-function-constructor-with-string-args
     const answerLambda = new awsLambda.Function(this, 'answerLambda', {
@@ -20,7 +26,6 @@ export class VAPIStack extends cdk.Stack {
       handler: 'answer.handler',
     });
     const answer = api.root.addResource('answer');
-    addCorsOptions(answer);
     answer.addMethod('GET', new awsApigateway.LambdaIntegration(answerLambda));
 
     // tslint:disable-next-line:no-function-constructor-with-string-args
@@ -29,7 +34,6 @@ export class VAPIStack extends cdk.Stack {
       handler: 'input.handler',
     });
     const input = api.root.addResource('input');
-    addCorsOptions(input);
     input.addMethod('POST', new awsApigateway.LambdaIntegration(inputLambda));
 
     // tslint:disable-next-line:no-function-constructor-with-string-args
@@ -38,7 +42,6 @@ export class VAPIStack extends cdk.Stack {
       handler: 'voice-event.handler',
     });
     const event = api.root.addResource('event');
-    addCorsOptions(event);
     event.addMethod('POST', new awsApigateway.LambdaIntegration(voiceEventLambda));
   }
 }
